@@ -6,13 +6,14 @@ class Episode < ActiveRecord::Base
   #scope :by_year, lambda {|year| where("date >= ? and date <= ?", "#{year}-01-01", "#{year}-12-31")}
   scope :by_year, lambda { |d| { :conditions  => { :airdate  => d.beginning_of_year..d.end_of_year } } }
   scope :by_month, lambda { |d| { :conditions  => { :airdate  => d.beginning_of_month..d.end_of_month } } }
+  scope :recent, order("airdate desc")
   
   has_many :participants
   has_many :segments, :order => "position"
   has_many :segment_bits, :through => :segments
   #has_many :bits, :through => :segment_bits
   
-  has_many :bit_episodes, :order => "position", :include => :bits
+  has_many :bit_episodes, :order => "position", dependent: :destroy
   has_many :bits, :through => :bit_episodes, :order => "bit_episodes.position" 
   
   has_many :episode_audios
@@ -27,6 +28,8 @@ class Episode < ActiveRecord::Base
   
   accepts_nested_attributes_for :segments  ,:allow_destroy => true
   
+  validates :slug, uniqueness: true
+
   belongs_to :owner,
              :class_name => "User",
              :foreign_key => "user_id"
@@ -35,10 +38,25 @@ class Episode < ActiveRecord::Base
                     :path => ":rails_root/public/episodes/:showdate_as_url/teaser-:style.:extension",
                     :url => "/episodes/:showdate_as_url/teaser-:style.:extension"
 
-  attr_accessible :title, :promo, :abstract, :content, :user_id, :status, :airdate, :teaser, :participants_attributes, :bits_attributes
+  attr_accessible :title, :promo, :abstract, :content, :user_id, :status, :airdate, :teaser, :lock_version, :participants_attributes, :bits_attributes, :publication_time
+  
+  def update_with_conflict_validation(*args)
+    update_attributes(*args)
+  rescue ActiveRecord::StaleObjectError
+    self.lock_version = lock_version_was
+    errors.add :base, "This record changed while you were editing."
+    changes.except("updated_at").each do |name, values|
+      errors.add name, "was #{values.first}"
+    end
+    false
+  end
   
   def airdate_to_s_rfc822
-     Time.new(airdate.year, airdate.month, airdate.day).advance(:hours => 10).rfc2822 
+    if publication_time 
+      publication_time.rfc2822
+    else
+      Time.new(airdate.year, airdate.month, airdate.day).advance(:hours => 10).rfc2822
+    end
   end
   
   def showdate_as_file_part

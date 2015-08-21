@@ -1,33 +1,36 @@
 BetaGeekspeakOrg::Application.routes.draw do
-  
   match "shows/npr-feed.xml" => "feeds#episodes",
             :defaults => { :format => 'xml' }
 
-  resources :users
+  resources :geeks, :as => :users,
+            :controller => :users,
+            :id => /[A-Za-z0-9\.\_\-]+?/, :format => false
 
-#  resources :segment_bits
+  resources :episode_audios
+  resources :episode_images
+  resources :bits
 
- # resources :bits
- resources :episode_audios
- resources :episode_images
-
- 
- resources :bits
- 
+  resources :bits_episode do
+    collection { post :sort }
+  end
+  
  
   resources :episodes, :id => /[0-9]+\/[0-9]+\/[0-9]+/ do
     resources :episode_audios
     resources :episode_images
-    resources :participants
   end
-  
+
+  match "/episodes/pending/" => "episodes#pending"
+  resources :participants
+
+
   match "/episodes/:year/" => "episodes#year_archive", 
                :constraints => {:year => /\d{4}/ }
   match "/episodes/:year/:month/" => "episodes#month_archive", 
                :constraints => {:year => /\d{4}/, :month => /0[1-9]|1[0-2]/ }
                
                
-  devise_for :users, ActiveAdmin::Devise.config
+  devise_for :users, path: "auth", path_names: { sign_in: 'login', sign_out: 'logout', password: 'secret', confirmation: 'verification', unlock: 'unblock', registration: 'register', sign_up: 'cmon_let_me_in' }
   
   ActiveAdmin.routes(self)
   
@@ -40,7 +43,11 @@ BetaGeekspeakOrg::Application.routes.draw do
               :action => 'update', :id => /[0-9]+\/[0-9]+\/[0-9]+/
   delete '/admin/episodes/:id', :controller => "admin/episodes",
               :action => 'destroy', :id => /[0-9]+\/[0-9]+\/[0-9]+/
+  get '/admin/users/:id', :controller => "admin/users",
+      :action => 'show', :id => /[A-Za-z0-9\.\_\-]+?/, :format => false
   
+  get '/admin/users/:id/edit', :controller => "admin/users",
+      :action => 'edit', :id => /[A-Za-z0-9\.\_\-]+?/, :format => false
   
  # mount Refinery::Core::Engine => '/engin/refinery.geekspeak.org/'
   
@@ -97,15 +104,19 @@ BetaGeekspeakOrg::Application.routes.draw do
   
   root :to => 'welcome#index'
   
-  match '/lyle'    => redirect("/users/lyle")
-  match '/ben'     => redirect("/users/ben")
-  match '/alan'    => redirect("/users/alan")
-  match '/lindsey' => redirect("/users/lindsey")
-  match '/rick'    => redirect("/users/rick")
-  match '/alex'    => redirect("/users/alex")
-  match '/john'    => redirect("/users/john")
+  match '/lyle'    => redirect("/geeks/lyle")
+  match '/ben'     => redirect("/geeks/ben")
+  match '/alan'    => redirect("/geeks/alan")
+  match '/al'    => redirect("/geeks/alan")
+  match '/lindsey' => redirect("/geeks/lindsey")
+  match '/rick'    => redirect("/geeks/rick")
+  match '/brian'    => redirect("/geeks/brian")
+  match '/alex'    => redirect("/geeks/alex")
+  match '/john'    => redirect("/geeks/john")
+  match '/users'    => redirect("/geeks")
+  match '/users/:name' => redirect("/geeks/%{name}"),:format => false
          
-  match '/:id' => 'high_voltage/pages#show', :as => :static, :via => :get
+  #match '/:id' => 'high_voltage/pages#show', :as => :static, :via => :get
 
 
 

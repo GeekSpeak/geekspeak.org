@@ -1,2 +1,0 @@
-jQuery ->
-	$('body').addClass("admin")

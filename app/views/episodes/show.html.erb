@@ -1,9 +1,13 @@
 <% title "#{@episode.title}" %>
 <% subtitle "GeekSpeak for #{@episode.airdate.strftime("%Y-%m-%d")}" %>
 
+
+<h1><%= best_in_place_if user_signed_in?, @episode, :title, :data => {:lock_version => @episode.lock_version}%></h1>
+<%= content_tag(:h3, ("GeekSpeak for #{@episode.airdate.strftime("%Y-%m-%d")}"), :class=>"subtitle") %>
+
 <%  if user_signed_in?  %>
 	<div class="span5 offset3"> 
-		<%= link_to "Edit", edit_admin_episode_path(@episode) %> | 
+		<%= link_to "Edit", edit_episode_path(@episode) %> | 
 		<%= link_to "Images", episode_episode_images_path(@episode)  %>
 	</div>
 <% end %>
@@ -12,47 +16,47 @@
 <div class="abstract">
 <%= content_tag(:div, image_tag(@episode.teaser.url(:small)), :class => "abstractimage") if @episode.teaser?%>
 
+<!--%= textilize(@episode.abstract).html_safe  unless @episode.abstract.blank? %-->
+<%= best_in_place_if user_signed_in?, @episode, :abstract, :type => :textarea,
+  :ok_button => 'Save', :cancel_button => 'Cancel', :nil => 'ADD AN ABSTRACT (click)',
+  :display_with => lambda { |v| textilize(v).html_safe }
+  %>
 
-<%= textilize(@episode.abstract).html_safe  unless @episode.abstract.blank? %>
 </div>
 <hr>
-<div id="bits">
-<%= render :partial => 'bits/bits', :locals=> {:bits => @episode.bits, :display_episode => false} %>
+<div id="bits_episode" data-update-url="<%= sort_bits_episode_index_url %>">
+<%= render :partial => 'bits/bits_episode', :locals=> {:bits_episode => @episode.bit_episodes, :display_episode => false} %>
 </div>
 <hr>
 
-<%= textilize(@episode.content).html_safe  unless @episode.content.blank? %>
+<%= textilize(@episode.content).html_safe unless @episode.content.blank? %>
 
 <% content_for :sidebar do %>
+	<% if not user_signed_in? %>
+	<ul class="nav nav-list">
+		<li>
+			<script type="text/javascript"><!--
+			google_ad_client = "ca-pub-6121986314656343";
+			/* GeekSpeak Home Small */
+			google_ad_slot = "1666270328";
+			google_ad_width = 234;
+			google_ad_height = 60;
+			//-->
+			</script>
+			<script type="text/javascript" src="http://pagead2.googlesyndication.com/pagead/show_ads.js"></script>
+		</li>
+	</ul>
+	<% end %>
     <%= render :partial => 'audios',
 			:locals => {:episode => @episode} if @episode.episode_audios.length > 0 || user_signed_in? %>
-	<% if user_signed_in? %>
 	<ul class="nav nav-list">
-				  <li class="nav-header"><%= link_to "#{content_tag("i","",:class=>"icon-plus")}Bits to Add".html_safe, new_bit_path %></li>
-				<li>
-	<%=  render( :partial => 'bits/bits_search_form', :locals => {:bits => @bits}) %>
-	</li>
-	</ul>
-	<% end %>	
-	<%= render :partial => 'participants',
-			:locals => {:participants => @episode.participants} if @episode.participants.length > 0%>
-
-
-
-	<% if false %>
-		<ul class="nav nav-list">
-		  <li class="nav-header">Episode Archive</li>
-			<li><%= link_to "2012", "/episodes/2012/"  %></li>
-			<li><%= link_to "2011", "/episodes/2011/"  %></li>
-			<li><%= link_to "2010", "/episodes/2010/"  %></li>
-			<li><%= link_to "2009", "/episodes/2009/"  %></li>
-			<li><%= link_to "2008", "/episodes/2008/"  %></li>
-			<li><%= link_to "2007", "/episodes/2007/"  %></li>
-			<li><%= link_to "2006", "/episodes/2006/"  %></li>
-			<li><%= link_to "2005", "/episodes/2005/"  %></li>
-			<li><%= link_to "2004", "/episodes/2004/"  %></li>
-			<li><%= link_to "2003", "/episodes/2003/"  %></li>
-			<li><%= link_to "2002", "/episodes/2002/"  %></li>
-		</ul>
+	<% if user_signed_in? %>
+		<li class="nav-header"><%= link_to "#{content_tag("i","",:class=>"icon-plus")}Bits to Add".html_safe, new_bit_path %></li>
+		<li>
+			<%=  render( :partial => 'bits/bits_episode_search_form', :locals => {:bits => @bits, :episode => @episode}) %>
+		</li>
 	<% end %>
+	</ul>	
+	<%= render :partial => 'participants',
+			:locals => {:participants => @episode.participants, :episode => @episode, :current_user => current_user} if @episode.participants.length > 0 || user_signed_in?%>
 <% end %>

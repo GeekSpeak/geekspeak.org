@@ -2,14 +2,14 @@
   <fieldset>
     <legend><%= controller.action_name.capitalize %> Bit</legend>
 
-	<%= f.input :title %>	
-	<%= f.input :url %>
-	<%= f.association :user, :collection => User.all %>
+	<%= f.input :title, :input_html => {:maxlength => 255}%>
+	<%= f.input :url, :input_html => {:maxlength => 255}%>
+	<%= f.association :user, :collection => User.all, :priority => [26] %>
 	<%= f.input :body %>
 
     <div class="form-actions">
       <%= f.submit nil, :class => 'btn btn-primary' %>
-      <%= link_to 'Cancel', bits_path, :class => 'btn' %>
+      <%= link_to_function 'Cancel', "history.back()", :class => 'btn' %>
     </div>
   </fieldset>
 <% end %>

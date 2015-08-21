@@ -1,5 +1,6 @@
 ActiveAdmin.register Episode do
 
+  menu false
 
   form :html => { :enctype => "multipart/form-data" } do |f|
      f.inputs "Details" do
@@ -7,6 +8,7 @@ ActiveAdmin.register Episode do
        f.input :airdate
        f.input :abstract
      end
+     f.input :lock_version, :as => :hidden
      f.inputs "Status" do
        f.select :status, I18n.t(:status_list).map { |key, value| [ value, key ] }
      end
@@ -21,14 +23,14 @@ ActiveAdmin.register Episode do
          p.input :_destroy, :as => :boolean, :label => "delete"
          #participant.role
      end
-    f.has_many :bits do |b|
-        b.input :title, :label => "Bit Title"
-        b.input :url, :label => "Bit URL"
-        b.input :body, :label => "Bit Body"
-        #b.input :user, :label => "Who's Bit is This?"
-        b.input :user, :collection => User.all, :include_blank => false
-        b.input :_destroy, :as => :boolean, :label => "delete this bit when you update this episode"
-    end
+    #f.has_many :bits do |b|
+    #    b.input :title, :label => "Bit Title"
+    #    b.input :url, :label => "Bit URL"
+    #    b.input :body, :label => "Bit Body"
+    #    #b.input :user, :label => "Who's Bit is This?"
+    #    b.input :user, :collection => User.all, :include_blank => false
+    #    b.input :_destroy, :as => :boolean, :label => "delete this bit when you update this episode"
+    #end
     f.inputs "Content" do
         f.input :content
     end
@@ -95,8 +97,16 @@ ActiveAdmin.register Episode do
       @resource.airdate ||= Date.today
     end
     def update
-      update! do |format|
-        format.html { redirect_to episode_url, :flash=> flash }
+      @resource = Episode.find(params[:id])
+      if @resource.update_with_conflict_validation(params[:episode])
+        
+      #update! do |format|
+        redirect_to episode_url(@resource)
+        #else
+        #format.html { redirect_to edit_admin_episode_url(@episode)}
+      else 
+        
+        redirect_to edit_admin_episode_url(@resource)
       end
     end
 

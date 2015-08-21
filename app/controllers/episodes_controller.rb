@@ -11,6 +11,10 @@ class EpisodesController < ApplicationController
     @episodes = Episode.where(:status => 'live').order('airdate DESC').limit(30)
   end
 
+  def pending
+    @episodes = Episode.where(Episode.arel_table[:status].not_eq('live')).order('airdate DESC').limit(30)
+  end
+
   def year_archive
     @episodes = Episode.by_year(Date.strptime("#{params[:year]}-01-01")).where(:status => 'live') 
     
@@ -45,11 +49,23 @@ class EpisodesController < ApplicationController
 
   def create
     @episode = Episode.new(params[:episode])
+    
     @episode.owner = current_user
-    if @episode.save
+
+    if @episode.valid?
+      @episode.save
+
       flash[:notice] = "Successfully created episode."
+      respond_with(@episode)
+    else
+      flash[:notice] = "This Episode Already Exists"
+      @date = Date.parse("#{params[:episode]["airdate(3i)"]}-#{params[:episode]["airdate(2i)"]}-#{params[:episode]["airdate(1i)"]}")
+
+      @episode = Episode.find(@date.strftime("%Y/%m/%d"))
+
+      #render inline: "Ahhh, dno new ep: #{slug}"
+      respond_with(@episode)
     end
-    respond_with(@episode)
   end
 
   def edit
@@ -59,10 +75,19 @@ class EpisodesController < ApplicationController
 
   def update
     @episode = Episode.find(params[:id])
-    if @episode.update_attributes(params[:episode])
-      flash[:notice] = "Successfully updated episode."
+    if @episode.update_with_conflict_validation(params[:episode])
+      
+
+      respond_to do |format|
+        format.html {redirect_to(@episode, :notice => "Successfully updated episode.")}
+        format.json { respond_with_bip(@episode) }
+      end
+      #format.html {
+      #  flash[:notice] = "Successfully updated episode."
+      #  respond_with(@episode)
+      #}
+      #format.json { respond_with_bip(@episode) }
     end
-    respond_with(@episode)
     
   end
 

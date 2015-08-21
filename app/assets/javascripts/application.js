@@ -6,6 +6,9 @@
 //
 //= require jquery
 //= require jquery_ujs
+//= require jquery.ui.all
+//= require jquery.purr
+//= require best_in_place
 //= require jquery.pjax
 //= require twitter/bootstrap/bootstrap-transition
 //= require twitter/bootstrap/bootstrap-alert
@@ -19,29 +22,30 @@
 //= require twitter/bootstrap/bootstrap-collapse
 //= require twitter/bootstrap/bootstrap-carousel
 //= require twitter/bootstrap/bootstrap-typeahead
-//= require_tree .
+//= require bootstrap
+//// require_tree .
 
 
 $(function() {
 	$("#bits_search input").keyup(function() {
-		$("#bits").fadeOut();
+		$("#bits_from_search").fadeOut();
 		$.get($("#bits_search").attr("action"), $("#bits_search").serialize(), null, "script");
 		return false;
 	});
 
 
-$('div.btn-group[data-toggle-name=*]').each(function(){
+$('div.btn-group').each(function(){
     var group   = $(this);
     var form    = group.parents('form').eq(0);
     var name    = group.attr('data-toggle-name');
     var hidden  = $('input[name="' + name + '"]', form);
     $('button', group).each(function(){
       var button = $(this);
-      button.live('click', function(){
-		$(this).parent().children().removeClass('active');
+      button.on('click', function(){
+        $(this).parent().children().removeClass('active');
         hidden.val($(this).val());
-		hidden.trigger('change');
-		$(this).addClass('active')
+        hidden.trigger('change');
+        $(this).addClass('active')
       });
       if(button.val() == hidden.val()) {
         button.addClass('active');
